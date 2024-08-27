@@ -251,6 +251,6 @@ Ensure that the CSV file uses these exact column names and types for successful 
 - **Database Errors**: `"msg": "<error_message>"`
 
 
-#### SQL Query
+## SQL Query
 
 - **Inside Query.txt File**
