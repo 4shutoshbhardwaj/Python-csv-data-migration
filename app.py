@@ -71,9 +71,8 @@ def upload():
         return jsonify({"msg": "No selected file"}), 400
     try:
         df = pd.read_csv(file)
-        print("Columns in CSV file:", df.columns)  # Debug print to check CSV columns
+        print("Columns in CSV file:", df.columns)
 
-        # Check for required columns
         required_columns = ['product_id', 'product_name', 'category', 'price', 'quantity_sold', 'rating', 'review_count']
         for col in required_columns:
             if col not in df.columns:
@@ -83,15 +82,14 @@ def upload():
         df['quantity_sold'].fillna(df['quantity_sold'].median(), inplace=True)
         df['rating'].fillna(df.groupby('category')['rating'].transform('mean'), inplace=True)
 
-        chunk_size = 100  # Process in chunks to avoid overloading
+        chunk_size = 100
         for start in range(0, len(df), chunk_size):
             end = start + chunk_size
             chunk = df.iloc[start:end]
-            with db.session.no_autoflush:  # Prevent premature autoflush
+            with db.session.no_autoflush:
                 for _, row in chunk.iterrows():
                     product = Product.query.filter_by(product_id=row['product_id']).first()
                     if product:
-                        # Update existing product
                         product.product_name = row['product_name']
                         product.category = row['category']
                         product.price = row['price']
@@ -99,7 +97,6 @@ def upload():
                         product.rating = row['rating']
                         product.review_count = row['review_count']
                     else:
-                        # Add new product
                         product = Product(
                             product_id=row['product_id'],
                             product_name=row['product_name'],
