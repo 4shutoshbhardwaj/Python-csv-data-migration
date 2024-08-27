@@ -1,0 +1,52 @@
+WITH customer_spending AS (
+    -- Calculate total spending per customer and per category within the last year
+    SELECT 
+        c.customer_id,
+        c.customer_name,
+        c.email,
+        p.category,
+        SUM(oi.quantity * oi.price_per_unit) AS category_spent,
+        SUM(SUM(oi.quantity * oi.price_per_unit)) OVER (PARTITION BY c.customer_id) AS total_spent
+    FROM Customers c
+    JOIN Orders o ON c.customer_id = o.customer_id
+    JOIN Order_Items oi ON o.order_id = oi.order_id
+    JOIN Products p ON oi.product_id = p.product_id
+    WHERE o.order_date >= CURDATE() - INTERVAL 1 YEAR
+    GROUP BY c.customer_id, c.customer_name, c.email, p.category
+),
+ranked_categories AS (
+    -- Rank categories for each customer based on the spending per category
+    SELECT
+        customer_id,
+        customer_name,
+        email,
+        total_spent,
+        category,
+        category_spent,
+        RANK() OVER (PARTITION BY customer_id ORDER BY category_spent DESC) AS category_rank
+    FROM customer_spending
+),
+top_customers AS (
+    -- Get the top 5 customers by their total spending
+    SELECT 
+        customer_id,
+        customer_name,
+        email,
+        total_spent
+    FROM ranked_categories
+    WHERE category_rank = 1
+    ORDER BY total_spent DESC
+    LIMIT 5
+)
+-- Retrieve the final output with the top 5 customers and their most purchased category
+SELECT 
+    tc.customer_id,
+    tc.customer_name,
+    tc.email,
+    tc.total_spent,
+    rc.category AS most_purchased_category
+FROM top_customers tc
+JOIN ranked_categories rc
+ON tc.customer_id = rc.customer_id AND rc.category_rank = 1
+ORDER BY tc.total_spent DESC;
+
