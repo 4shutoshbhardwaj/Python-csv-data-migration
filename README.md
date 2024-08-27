@@ -80,3 +80,8 @@ Ensure you have the following installed:
     "username": "your_username",
     "password": "your_password"
   }
+
+
+## SQL Query
+
+- **Inside Query.txt File**
